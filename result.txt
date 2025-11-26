@@ -1,0 +1,93 @@
+
+=============================
+Chạy lúc: 2025-11-26 15:28:37.466660
+Số ván: 10
+=============================
+Game 1: Winner -> Minimax | Time: 60.23s
+Game 2: Winner -> Minimax | Time: 43.86s
+Game 3: Winner -> Draw | Time: 90.61s
+Game 4: Winner -> Minimax | Time: 53.09s
+Game 5: Winner -> Minimax | Time: 93.05s
+Game 6: Winner -> Minimax | Time: 80.87s
+Game 7: Winner -> Minimax | Time: 14.51s
+Game 8: Winner -> Minimax | Time: 33.19s
+Game 9: Winner -> Minimax | Time: 111.00s
+Game 10: Winner -> Minimax | Time: 24.97s
+
+---- Kết quả ----
+Minimax win: 9
+Random win: 0
+Draw: 1
+Total Runtime: 605.39s
+=============================
+
+
+=============================
+Chạy lúc: 2025-11-26 15:39:11.135288
+Số ván: 10
+=============================
+Game 1: Winner -> Minimax | Time: 78.78s
+Game 2: Winner -> Draw | Time: 106.00s
+Game 3: Winner -> Minimax | Time: 98.76s
+Game 4: Winner -> Minimax | Time: 75.79s
+Game 5: Winner -> Minimax | Time: 72.37s
+Game 6: Winner -> Minimax | Time: 73.34s
+Game 7: Winner -> Minimax | Time: 85.63s
+Game 8: Winner -> Draw | Time: 62.82s
+Game 9: Winner -> Minimax | Time: 24.62s
+Game 10: Winner -> Minimax | Time: 82.36s
+
+---- Kết quả ----
+Minimax win: 8
+Random win: 0
+Draw: 2
+Total Runtime: 760.47s
+=============================
+
+
+=============================
+Chạy lúc: 2025-11-26 16:05:06.144316
+Số ván: 20
+=============================
+Game 1: Winner -> Minimax | Time: 41.91s
+Game 2: Winner -> Draw | Time: 40.03s
+Game 3: Winner -> Minimax | Time: 58.68s
+Game 4: Winner -> Minimax | Time: 42.40s
+Game 5: Winner -> Minimax | Time: 30.80s
+Game 6: Winner -> Minimax | Time: 46.96s
+Game 7: Winner -> Minimax | Time: 32.89s
+Game 8: Winner -> Minimax | Time: 53.73s
+Game 9: Winner -> Minimax | Time: 77.95s
+Game 10: Winner -> Minimax | Time: 98.38s
+Game 11: Winner -> Minimax | Time: 48.84s
+Game 12: Winner -> Minimax | Time: 25.38s
+Game 13: Winner -> Minimax | Time: 57.55s
+Game 14: Winner -> Minimax | Time: 40.54s
+Game 15: Winner -> Minimax | Time: 51.04s
+Game 16: Winner -> Minimax | Time: 67.11s
+Game 17: Winner -> Minimax | Time: 39.20s
+Game 18: Winner -> Minimax | Time: 43.10s
+Game 19: Winner -> Minimax | Time: 65.01s
+Game 20: Winner -> Minimax | Time: 42.84s
+
+---- Kết quả ----
+Minimax win: 19
+Random win: 0
+Draw: 1
+Total Runtime: 1004.33s
+=============================
+
+
+=============================
+Chạy lúc: 2025-11-26 16:23:26.720709
+Số ván: 1
+=============================
+Game 1: Winner -> Minimax | Time: 20.36s
+
+---- Kết quả ----
+Minimax win: 1
+Random win: 0
+Draw: 0
+Total Runtime: 20.36s
+=============================
+
