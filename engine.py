@@ -1,12 +1,4 @@
-# chess_engine.py
-# Simple Chess Engine core (Python)
-# - Board: 8x8, rows 0..7 (0 is rank 8), cols 0..7 (0 is file a)
-# - Pieces: 'K','Q','R','B','N','P' for White, lowercase for Black
-# - Methods: init_board, clone, get_valid_moves, apply_move, undo_move,
-#            is_in_check, is_checkmate, is_stalemate, print_board
-# - Limitations: no en-passantd, no 50-move rule, no threefold repetition
-# - Castling supported with moved flags
-
+# chess_engine_full.py
 import copy
 
 WHITE = 'w'
@@ -22,7 +14,7 @@ def in_bounds(r,c):
 
 class Move:
     def __init__(self, from_sq, to_sq, piece, captured=None, promotion=None, is_castling=False):
-        self.from_sq = from_sq  # (r,c)
+        self.from_sq = from_sq
         self.to_sq = to_sq
         self.piece = piece
         self.captured = captured
@@ -39,9 +31,8 @@ class Board:
     def __init__(self):
         self.board = [['.' for _ in range(8)] for _ in range(8)]
         self.turn = WHITE
-        # castling rights: wk/wq/bk/bq
-        self.castling = {'w_k':True, 'w_q':True, 'b_k':True, 'b_q':True}
-        self.move_stack = []  # stack of (Move, prev_state_info)
+        self.castling = {'w_k':True,'w_q':True,'b_k':True,'b_q':True}
+        self.move_stack = []
         self.halfmove_clock = 0
         self.fullmove_number = 1
         self.init_board()
@@ -50,7 +41,6 @@ class Board:
         return copy.deepcopy(self)
 
     def init_board(self):
-        # Standard initial position
         setup = [
             "rnbqkbnr",
             "pppppppp",
@@ -63,10 +53,9 @@ class Board:
         ]
         for r in range(8):
             for c in range(8):
-                ch = setup[r][c]
-                self.board[r][c] = ch if ch != '.' else '.'
+                self.board[r][c] = setup[r][c]
         self.turn = WHITE
-        self.castling = {'w_k':True, 'w_q':True, 'b_k':True, 'b_q':True}
+        self.castling = {'w_k':True,'w_q':True,'b_k':True,'b_q':True}
         self.move_stack = []
         self.halfmove_clock = 0
         self.fullmove_number = 1
@@ -74,8 +63,7 @@ class Board:
     def print_board(self):
         print("  +-----------------+")
         for r in range(8):
-            row = self.board[r]
-            print(f"{8-r} | {' '.join(row)} |")
+            print(f"{8-r} | {' '.join(self.board[r])} |")
         print("  +-----------------+")
         print("    a b c d e f g h")
         print(f"Turn: {'White' if self.turn==WHITE else 'Black'}")
@@ -83,11 +71,11 @@ class Board:
         print(f"Fullmove: {self.fullmove_number}")
 
     def piece_color(self, p):
-        if p == '.' : return None
+        if p == '.': return None
         return WHITE if p.isupper() else BLACK
 
     def find_king(self, color):
-        k = 'K' if color == WHITE else 'k'
+        k = 'K' if color==WHITE else 'k'
         for r in range(8):
             for c in range(8):
                 if self.board[r][c] == k:
@@ -95,50 +83,49 @@ class Board:
         return None
 
     def is_square_attacked(self, sq, by_color):
-        # return True if square (r,c) is attacked by side by_color
         r0,c0 = sq
-        # pawns
+        # Pawns
         if by_color == WHITE:
-            pawn_dirs = [(-1,-1),(-1,1)]
+            dirs = [(-1,-1),(-1,1)]
             pawn = 'P'
         else:
-            pawn_dirs = [(1,-1),(1,1)]
+            dirs = [(1,-1),(1,1)]
             pawn = 'p'
-        for dr,dc in pawn_dirs:
+        for dr,dc in dirs:
             r,c = r0+dr, c0+dc
-            if in_bounds(r,c) and self.board[r][c] == pawn:
+            if in_bounds(r,c) and self.board[r][c]==pawn:
                 return True
-        # knights
+        # Knights
         knight = 'N' if by_color==WHITE else 'n'
         for dr,dc in DIRS_KNIGHT:
             r,c = r0+dr, c0+dc
-            if in_bounds(r,c) and self.board[r][c] == knight:
+            if in_bounds(r,c) and self.board[r][c]==knight:
                 return True
-        # bishops/queens (diagonals)
+        # Bishops/Queens
         for dr,dc in DIRS_BISHOP:
-            r,c = r0+dr, c0+dc
+            r,c = r0+dr,c0+dc
             while in_bounds(r,c):
                 ch = self.board[r][c]
                 if ch != '.':
-                    if self.piece_color(ch) == by_color and (ch.lower()=='b' or ch.lower()=='q'):
+                    if self.piece_color(ch)==by_color and ch.lower() in ['b','q']:
                         return True
                     break
-                r += dr; c += dc
-        # rooks/queens (lines)
+                r+=dr; c+=dc
+        # Rooks/Queens
         for dr,dc in DIRS_ROOK:
-            r,c = r0+dr, c0+dc
+            r,c = r0+dr,c0+dc
             while in_bounds(r,c):
                 ch = self.board[r][c]
                 if ch != '.':
-                    if self.piece_color(ch) == by_color and (ch.lower()=='r' or ch.lower()=='q'):
+                    if self.piece_color(ch)==by_color and ch.lower() in ['r','q']:
                         return True
                     break
-                r += dr; c += dc
-        # king adjacency
+                r+=dr;c+=dc
+        # King
         king = 'K' if by_color==WHITE else 'k'
         for dr,dc in DIRS_KING:
             r,c = r0+dr, c0+dc
-            if in_bounds(r,c) and self.board[r][c] == king:
+            if in_bounds(r,c) and self.board[r][c]==king:
                 return True
         return False
 
@@ -147,239 +134,204 @@ class Board:
         for r in range(8):
             for c in range(8):
                 p = self.board[r][c]
-                if p == '.': continue
-                if self.piece_color(p) != self.turn: continue
-                moves.extend(self._piece_moves((r,c), p))
+                if p=='.': continue
+                if self.piece_color(p)!=self.turn: continue
+                moves.extend(self._piece_moves((r,c),p))
         return moves
 
-    def _piece_moves(self, pos, p):
+    def _piece_moves(self,pos,p):
         r,c = pos
         color = self.piece_color(p)
         opp = BLACK if color==WHITE else WHITE
         moves = []
         pl = p.lower()
-        if pl == 'p':  # pawn
+        if pl=='p':
             direction = -1 if color==WHITE else 1
             start_row = 6 if color==WHITE else 1
-            # single forward
-            r1,c1 = r+direction, c
-            if in_bounds(r1,c1) and self.board[r1][c1]=='.':
-                # promotion?
+            # forward
+            r1 = r+direction
+            if in_bounds(r1,c) and self.board[r1][c]=='.':
                 if r1==0 or r1==7:
                     for promo in ['Q','R','B','N']:
                         promo_piece = promo if color==WHITE else promo.lower()
-                        moves.append(Move((r,c),(r1,c1),p, captured=None, promotion=promo_piece))
+                        moves.append(Move((r,c),(r1,c),p,promotion=promo_piece))
                 else:
-                    moves.append(Move((r,c),(r1,c1),p))
-                # double
-                r2 = r + 2*direction
-                if r == start_row and in_bounds(r2,c) and self.board[r2][c]=='.':
+                    moves.append(Move((r,c),(r1,c),p))
+                r2 = r+2*direction
+                if r==start_row and in_bounds(r2,c) and self.board[r2][c]=='.':
                     moves.append(Move((r,c),(r2,c),p))
-            # captures
-            for dc in (-1,1):
+            # capture
+            for dc in [-1,1]:
                 rr,cc = r+direction, c+dc
-                if in_bounds(rr,cc) and self.board[rr][cc] != '.' and self.piece_color(self.board[rr][cc])==opp:
+                if in_bounds(rr,cc) and self.board[rr][cc]!='.' and self.piece_color(self.board[rr][cc])==opp:
                     if rr==0 or rr==7:
                         for promo in ['Q','R','B','N']:
                             promo_piece = promo if color==WHITE else promo.lower()
-                            moves.append(Move((r,c),(rr,cc),p, captured=self.board[rr][cc], promotion=promo_piece))
+                            moves.append(Move((r,c),(rr,cc),p,captured=self.board[rr][cc],promotion=promo_piece))
                     else:
-                        moves.append(Move((r,c),(rr,cc),p, captured=self.board[rr][cc]))
-            # Note: en-passant not implemented
-        elif pl == 'n':
+                        moves.append(Move((r,c),(rr,cc),p,captured=self.board[rr][cc]))
+        elif pl=='n':
             for dr,dc in DIRS_KNIGHT:
-                rr,cc = r+dr, c+dc
+                rr,cc = r+dr,c+dc
                 if not in_bounds(rr,cc): continue
-                if self.board[rr][cc]=='.' or self.piece_color(self.board[rr][cc])==opp:
-                    moves.append(Move((r,c),(rr,cc),p, captured=(self.board[rr][cc] if self.board[rr][cc]!='.' else None)))
-        elif pl == 'b' or pl == 'r' or pl == 'q':
-            dirs = []
-            if pl == 'b': dirs = DIRS_BISHOP
-            elif pl == 'r': dirs = DIRS_ROOK
-            else: dirs = DIRS_BISHOP + DIRS_ROOK
+                target = self.board[rr][cc]
+                if target=='.' or self.piece_color(target)==opp:
+                    moves.append(Move((r,c),(rr,cc),p,captured=(target if target!='.' else None)))
+        elif pl in ['b','r','q']:
+            dirs = DIRS_BISHOP if pl=='b' else DIRS_ROOK if pl=='r' else DIRS_BISHOP+DIRS_ROOK
             for dr,dc in dirs:
-                rr,cc = r+dr, c+dc
+                rr,cc = r+dr,c+dc
                 while in_bounds(rr,cc):
-                    if self.board[rr][cc] == '.':
+                    target = self.board[rr][cc]
+                    if target=='.':
                         moves.append(Move((r,c),(rr,cc),p))
                     else:
-                        if self.piece_color(self.board[rr][cc])==opp:
-                            moves.append(Move((r,c),(rr,cc),p, captured=self.board[rr][cc]))
+                        if self.piece_color(target)==opp:
+                            moves.append(Move((r,c),(rr,cc),p,captured=target))
                         break
-                    rr += dr; cc += dc
-        elif pl == 'k':
+                    rr+=dr; cc+=dc
+        elif pl=='k':
             for dr,dc in DIRS_KING:
-                rr,cc = r+dr, c+dc
+                rr,cc = r+dr,c+dc
                 if not in_bounds(rr,cc): continue
-                if self.board[rr][cc]=='.' or self.piece_color(self.board[rr][cc])==opp:
-                    moves.append(Move((r,c),(rr,cc),p, captured=(self.board[rr][cc] if self.board[rr][cc]!='.' else None)))
-            # castling (basic checks: squares empty and not in check and rook/king not moved)
+                target = self.board[rr][cc]
+                if target=='.' or self.piece_color(target)==opp:
+                    # simulate king move
+                    orig_from, orig_to = self.board[r][c], self.board[rr][cc]
+                    self.board[rr][cc]=p
+                    self.board[r][c]='.'
+                    if not self.is_square_attacked((rr,cc),opp):
+                        moves.append(Move((r,c),(rr,cc),p,captured=(target if target!='.' else None)))
+                    self.board[r][c]=orig_from
+                    self.board[rr][cc]=orig_to
+            # castling
             if color==WHITE:
-                if self.castling['w_k']:
-                    # squares f1 (7,5) and g1 (7,6) must be empty and not attacked
-                    if self.board[7][5]=='.' and self.board[7][6]=='.':
-                        if not self.is_square_attacked((7,4),BLACK) and not self.is_square_attacked((7,5),BLACK) and not self.is_square_attacked((7,6),BLACK):
-                            if self.board[7][7].lower()=='r':
-                                moves.append(Move((r,c),(7,6),p, is_castling=True))
-                if self.castling['w_q']:
-                    if self.board[7][1]=='.' and self.board[7][2]=='.' and self.board[7][3]=='.':
-                        if not self.is_square_attacked((7,4),BLACK) and not self.is_square_attacked((7,3),BLACK) and not self.is_square_attacked((7,2),BLACK):
-                            if self.board[7][0].lower()=='r':
-                                moves.append(Move((r,c),(7,2),p, is_castling=True))
+                # King side
+                if self.castling['w_k'] and self.board[7][5]=='.' and self.board[7][6]=='.' and self.board[7][7]=='R':
+                    if not any(self.is_square_attacked(sq,BLACK) for sq in [(7,4),(7,5),(7,6)]):
+                        moves.append(Move((7,4),(7,6),'K',is_castling=True))
+                # Queen side
+                if self.castling['w_q'] and self.board[7][1]=='.' and self.board[7][2]=='.' and self.board[7][3]=='.' and self.board[7][0]=='R':
+                    if not any(self.is_square_attacked(sq,BLACK) for sq in [(7,4),(7,3),(7,2)]):
+                        moves.append(Move((7,4),(7,2),'K',is_castling=True))
             else:
-                if self.castling['b_k']:
-                    if self.board[0][5]=='.' and self.board[0][6]=='.':
-                        if not self.is_square_attacked((0,4),WHITE) and not self.is_square_attacked((0,5),WHITE) and not self.is_square_attacked((0,6),WHITE):
-                            if self.board[0][7].lower()=='r':
-                                moves.append(Move((r,c),(0,6),p, is_castling=True))
-                if self.castling['b_q']:
-                    if self.board[0][1]=='.' and self.board[0][2]=='.' and self.board[0][3]=='.':
-                        if not self.is_square_attacked((0,4),WHITE) and not self.is_square_attacked((0,3),WHITE) and not self.is_square_attacked((0,2),WHITE):
-                            if self.board[0][0].lower()=='r':
-                                moves.append(Move((r,c),(0,2),p, is_castling=True))
+                if self.castling['b_k'] and self.board[0][5]=='.' and self.board[0][6]=='.' and self.board[0][7]=='r':
+                    if not any(self.is_square_attacked(sq,WHITE) for sq in [(0,4),(0,5),(0,6)]):
+                        moves.append(Move((0,4),(0,6),'k',is_castling=True))
+                if self.castling['b_q'] and self.board[0][1]=='.' and self.board[0][2]=='.' and self.board[0][3]=='.' and self.board[0][0]=='r':
+                    if not any(self.is_square_attacked(sq,WHITE) for sq in [(0,4),(0,3),(0,2)]):
+                        moves.append(Move((0,4),(0,2),'k',is_castling=True))
         return moves
 
-    def get_valid_moves(self):
-        # Generate pseudo-legal and remove those leaving own king in check
-        moves = self.generate_pseudo_legal_moves()
-        legal = []
-        for m in moves:
-            prev = self._make_move_on_board(m)
-            king_pos = self.find_king(self.turn)
-            # After making move, check if king is attacked
-            if king_pos is None:
-                # king captured? treat as illegal
-                ok = False
+    def _make_move_on_board(self,m):
+        r1,c1 = m.from_sq; r2,c2 = m.to_sq
+        prev_from = self.board[r1][c1]
+        prev_to = self.board[r2][c2]
+        prev_castling = self.castling.copy()
+        prev_half = self.halfmove_clock
+        prev_full = self.fullmove_number
+
+        # move
+        self.board[r2][c2] = m.promotion if m.promotion else self.board[r1][c1]
+        self.board[r1][c1]='.'
+
+        # castling
+        if m.is_castling:
+            if m.piece=='K':
+                if (r2,c2)==(7,6):
+                    self.board[7][5]=self.board[7][7]; self.board[7][7]='.'
+                else:
+                    self.board[7][3]=self.board[7][0]; self.board[7][0]='.'
             else:
-                ok = not self.is_square_attacked(self.find_king(self.turn), BLACK if self.turn==WHITE else WHITE)
-            self._unmake_move_on_board(m, prev)
-            if ok:
+                if (r2,c2)==(0,6):
+                    self.board[0][5]=self.board[0][7]; self.board[0][7]='.'
+                else:
+                    self.board[0][3]=self.board[0][0]; self.board[0][0]='.'
+
+        # update castling rights
+        if prev_from in ['K','k']:
+            if prev_from=='K': self.castling['w_k']=self.castling['w_q']=False
+            else: self.castling['b_k']=self.castling['b_q']=False
+        if (r1,c1)==(7,0) or (r2,c2)==(7,0): self.castling['w_q']=False
+        if (r1,c1)==(7,7) or (r2,c2)==(7,7): self.castling['w_k']=False
+        if (r1,c1)==(0,0) or (r2,c2)==(0,0): self.castling['b_q']=False
+        if (r1,c1)==(0,7) or (r2,c2)==(0,7): self.castling['b_k']=False
+
+        # halfmove clock
+        if prev_to!='.' or prev_from.lower()=='p': self.halfmove_clock=0
+        else: self.halfmove_clock+=1
+
+        # switch turn
+        self.turn = BLACK if self.turn==WHITE else WHITE
+        if self.turn==WHITE: self.fullmove_number+=1
+
+        return (prev_from,prev_to,prev_castling,prev_half,prev_full)
+
+    def _unmake_move_on_board(self,m,prev):
+        r1,c1 = m.from_sq; r2,c2 = m.to_sq
+        prev_from,prev_to,prev_castling,prev_half,prev_full=prev
+        self.board[r1][c1]=prev_from
+        self.board[r2][c2]=prev_to if prev_to!='.' else '.'
+
+        # undo castling
+        if m.is_castling:
+            if m.piece=='K':
+                if (r2,c2)==(7,6): self.board[7][7]=self.board[7][5]; self.board[7][5]='.'
+                else: self.board[7][0]=self.board[7][3]; self.board[7][3]='.'
+            else:
+                if (r2,c2)==(0,6): self.board[0][7]=self.board[0][5]; self.board[0][5]='.'
+                else: self.board[0][0]=self.board[0][3]; self.board[0][3]='.'
+
+        self.castling=prev_castling
+        self.halfmove_clock=prev_half
+        self.fullmove_number=prev_full
+        self.turn = BLACK if self.turn==WHITE else WHITE
+
+    def get_valid_moves(self):
+        pseudo = self.generate_pseudo_legal_moves()
+        legal = []
+        for m in pseudo:
+            prev = self._make_move_on_board(m)
+            king_pos = self.find_king(BLACK if self.turn==WHITE else WHITE)
+            if king_pos and not self.is_square_attacked(king_pos, self.turn):
                 legal.append(m)
+            self._unmake_move_on_board(m,prev)
         return legal
 
-    def _make_move_on_board(self, m):
-        # Apply move on board only, return previous state info for undo
-        r1,c1 = m.from_sq; r2,c2 = m.to_sq
-        prev_piece_from = self.board[r1][c1]
-        prev_piece_to = self.board[r2][c2]
-        prev_castling = self.castling.copy()
-        prev_halfmove = self.halfmove_clock
-        prev_fullmove = self.fullmove_number
-
-        # Move piece
-        self.board[r2][c2] = m.promotion if m.promotion else self.board[r1][c1]
-        self.board[r1][c1] = '.'
-
-        # castling rook move
-        if m.is_castling:
-            # white king moved from e1 (7,4) to g1 (7,6) or c1 (7,2)
-            if self.turn==WHITE:
-                if (r2,c2) == (7,6):  # king side
-                    self.board[7][5] = self.board[7][7]; self.board[7][7]='.'
-                elif (r2,c2) == (7,2): # queen side
-                    self.board[7][3] = self.board[7][0]; self.board[7][0]='.'
-            else:
-                if (r2,c2) == (0,6):
-                    self.board[0][5] = self.board[0][7]; self.board[0][7]='.'
-                elif (r2,c2) == (0,2):
-                    self.board[0][3] = self.board[0][0]; self.board[0][0]='.'
-
-        # update castling rights if king or rook moved/captured
-        piece_moved = prev_piece_from
-        if piece_moved == 'K':
-            self.castling['w_k'] = False; self.castling['w_q'] = False
-        if piece_moved == 'k':
-            self.castling['b_k'] = False; self.castling['b_q'] = False
-        # rook moved from initial squares
-        if (r1,c1) == (7,0) or (r2,c2)==(7,0):
-            if self.board[7][0].lower() != 'r': self.castling['w_q'] = False
-        if (r1,c1) == (7,7) or (r2,c2)==(7,7):
-            if self.board[7][7].lower() != 'r': self.castling['w_k'] = False
-        if (r1,c1) == (0,0) or (r2,c2)==(0,0):
-            if self.board[0][0].lower() != 'r': self.castling['b_q'] = False
-        if (r1,c1) == (0,7) or (r2,c2)==(0,7):
-            if self.board[0][7].lower() != 'r': self.castling['b_k'] = False
-
-        # halfmove clock update
-        if prev_piece_to != '.' or piece_moved.lower()=='p':
-            self.halfmove_clock = 0
-        else:
-            self.halfmove_clock += 1
-
-        # turn switch & fullmove update
-        self.turn = BLACK if self.turn==WHITE else WHITE
-        if self.turn == WHITE:
-            self.fullmove_number += 1
-
-        return (prev_piece_from, prev_piece_to, prev_castling, prev_halfmove, prev_fullmove)
-
-    def _unmake_move_on_board(self, m, prev):
-        r1,c1 = m.from_sq; r2,c2 = m.to_sq
-        prev_piece_from, prev_piece_to, prev_castling, prev_halfmove, prev_fullmove = prev
-        # revert main move
-        # If promotion occurred, we restore the pawn
-        self.board[r1][c1] = prev_piece_from
-        self.board[r2][c2] = prev_piece_to if prev_piece_to != '.' else '.'
-        # revert castling rook move
-        if m.is_castling:
-            if prev_piece_from == 'K':
-                # was white king
-                if (r2,c2) == (7,6):  # king side
-                    self.board[7][7] = self.board[7][5]; self.board[7][5] = '.'
-                elif (r2,c2) == (7,2):
-                    self.board[7][0] = self.board[7][3]; self.board[7][3] = '.'
-            else:
-                if (r2,c2) == (0,6):
-                    self.board[0][7] = self.board[0][5]; self.board[0][5] = '.'
-                elif (r2,c2) == (0,2):
-                    self.board[0][0] = self.board[0][3]; self.board[0][3] = '.'
-
-        # restore castling and clocks
-        self.castling = prev_castling
-        self.halfmove_clock = prev_halfmove
-        self.fullmove_number = prev_fullmove
-        # switch turn back
-        self.turn = BLACK if self.turn==WHITE else WHITE
-
-    def apply_move(self, m):
-        # apply move and record for undo
+    def apply_move(self,m):
         prev = self._make_move_on_board(m)
-        self.move_stack.append((m, prev))
+        self.move_stack.append((m,prev))
 
     def undo_move(self):
-        if not self.move_stack:
-            return
-        m, prev = self.move_stack.pop()
-        self._unmake_move_on_board(m, prev)
+        if not self.move_stack: return
+        m,prev = self.move_stack.pop()
+        self._unmake_move_on_board(m,prev)
 
-    def is_in_check(self, color):
+    def is_in_check(self,color):
         king = self.find_king(color)
-        if king is None:  # no king -> treated as in check
-            return True
+        if king is None: return True
         return self.is_square_attacked(king, BLACK if color==WHITE else WHITE)
 
-    def legal_moves_exist(self, color):
-        saved_turn = self.turn
-        self.turn = color
+    def legal_moves_exist(self,color):
+        saved = self.turn
+        self.turn=color
         moves = self.get_valid_moves()
-        self.turn = saved_turn
-        return len(moves) > 0
+        self.turn=saved
+        return len(moves)>0
 
-    def is_checkmate(self, color):
-        if not self.is_in_check(color): return False
-        return not self.legal_moves_exist(color)
+    def is_checkmate(self,color):
+        return self.is_in_check(color) and not self.legal_moves_exist(color)
 
-    def is_stalemate(self, color):
-        if self.is_in_check(color): return False
-        return not self.legal_moves_exist(color)
+    def is_stalemate(self,color):
+        return not self.is_in_check(color) and not self.legal_moves_exist(color)
 
-# Quick demo: random play until terminal or N moves
-if __name__ == "__main__":
+
+# Demo random play
+if __name__=="__main__":
     import random, time
     b = Board()
     b.print_board()
-    max_moves = 200
-    for i in range(max_moves):
+    for i in range(200):
         moves = b.get_valid_moves()
         if not moves:
             if b.is_in_check(b.turn):
@@ -388,9 +340,7 @@ if __name__ == "__main__":
                 print("Stalemate!")
             break
         m = random.choice(moves)
-        print("Applying:", m)
+        print("Applying:",m)
         b.apply_move(m)
         b.print_board()
-        time.sleep(0.1)
-    else:
-        print("Max moves reached.")
+        time.sleep(0.05)
