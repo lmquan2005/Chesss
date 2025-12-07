@@ -86,10 +86,10 @@ class Board:
         r0,c0 = sq
         # Pawns
         if by_color == WHITE:
-            dirs = [(-1,-1),(-1,1)]
+            dirs = [(1,-1),(1,1)]
             pawn = 'P'
         else:
-            dirs = [(1,-1),(1,1)]
+            dirs = [(-1,-1),(-1,1)]
             pawn = 'p'
         for dr,dc in dirs:
             r,c = r0+dr, c0+dc
