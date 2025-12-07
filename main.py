@@ -2,6 +2,8 @@ import pygame
 import sys
 import random
 from engine import Board
+from minimax import Minimax
+from agents import HumanAgent, RandomAgent, MinimaxAgent, MLAgent
 
 # --- CẤU HÌNH  ---
 WIDTH = 768    
@@ -84,6 +86,11 @@ class ChessMain:
         pygame.display.set_caption("Chess UI - Group Project Mockup")
         self.clock = pygame.time.Clock()
         self.gs = Board()
+        self.agents = {
+            'w': HumanAgent(), 
+            'b': HumanAgent()  
+        }
+        self.ai = Minimax(depth=3)
         self.game_state = "MENU" # MENU, PLAYING
         self.game_mode = "PvP"   # PvP, PvAI, AIvAI
 
@@ -110,14 +117,36 @@ class ChessMain:
 
         # Tạo các nút cho Menu
         self.btn_pvp = Button("Player vs Player", WIDTH//2 - 100, 150, 200, 50, Theme.BTN_MENU, text_color = Theme.TEXT_MAIN, font = self.BUTTONS_FONT)
-        self.btn_minimax = Button("Player vs Minimax", WIDTH//2 - 100, 220, 200, 50, Theme.BTN_MENU, text_color = Theme.TEXT_MAIN, font = self.BUTTONS_FONT)
-        self.btn_ai_ai = Button("AI vs AI (Demo)", WIDTH//2 - 100, 290, 200, 50, Theme.BTN_MENU, text_color = Theme.TEXT_MAIN, font = self.BUTTONS_FONT)
-        
+        self.btn_pv_minimax = Button("Player vs Minimax", WIDTH//2 - 100, 220, 200, 50, Theme.BTN_MENU, text_color = Theme.TEXT_MAIN, font = self.BUTTONS_FONT)
+        self.btn_minimax_random = Button("Minimax vs Random", WIDTH//2 - 100, 290, 200, 50, Theme.BTN_MENU, text_color = Theme.TEXT_MAIN, font = self.BUTTONS_FONT)
+        self.btn_ml_random = Button("ML vs Random", WIDTH//2 - 100, 360, 200, 50, Theme.BTN_MENU, text_color = Theme.TEXT_MAIN, font = self.BUTTONS_FONT)
+
         # ... Các nút chọn khác
 
         # Trạng thái click chuột
         self.selected_square = () # (row, col) người dùng vừa click
         self.valid_moves = []     # Danh sách ô có thể đi từ ô đã chọn
+
+    def setup_mode(self, mode_name):
+        self.game_mode = mode_name
+        self.game_state = "PLAYING"
+        self.gs = Board()
+
+        if mode_name == "PvP":
+            self.agents['w'] = HumanAgent()
+            self.agents['b'] = HumanAgent()
+            
+        elif mode_name == "PvMinimax":
+            self.agents['w'] = HumanAgent()
+            self.agents['b'] = MinimaxAgent(depth=3)
+            
+        elif mode_name == "MinimaxVsRandom":
+            self.agents['w'] = MinimaxAgent(depth=3)
+            self.agents['b'] = RandomAgent()
+
+        elif mode_name == "MLvsRandom":
+            self.agents['w'] = MLAgent()
+            self.agents['b'] = RandomAgent()
 
     def load_images(self):
         pieces = ['wP', 'wR', 'wN', 'wB', 'wQ', 'wK', 'bP', 'bR', 'bN', 'bB', 'bQ', 'bK']
@@ -136,8 +165,9 @@ class ChessMain:
 
         # Buttons
         self.btn_pvp.draw(self.screen)
-        self.btn_minimax.draw(self.screen)
-        self.btn_ai_ai.draw(self.screen)
+        self.btn_pv_minimax.draw(self.screen)
+        self.btn_minimax_random.draw(self.screen)
+        self.btn_ml_random.draw(self.screen)
 
     # Vẽ bàn cờ
     def draw_board(self):
@@ -341,54 +371,48 @@ class ChessMain:
             self.clock.tick(MAX_FPS)
         
         return selected_piece
-    
-    def execute_ai_move(self):
-        # Tạm thời dùng Random Move để test UI. 
-        valid_moves = self.gs.get_valid_moves()
-        
-        if not valid_moves:
-            return 
-        
-        ai_move = None
-        
-        if self.game_mode == "PvAI":
-            # Giả sử đây là chỗ của Minimax sau này. Tạm thời: Random
-            print("AI (Minimax Placeholder) đang suy nghĩ...")
-            pygame.time.delay(500) 
-            ai_move = random.choice(valid_moves)
+
+    def execute_agent_move(self):
+        # Lấy Agent hiện tại
+        current_turn = self.gs.turn # 'w' hoặc 'b'
+        current_agent = self.agents[current_turn]
+
+        # Nếu là người
+        if current_agent.is_human():
+            return
+
+        # Nếu là AI/Random
+        print(f"{type(current_agent).__name__} ({current_turn}) is thinking...")
+        if "Random" in type(current_agent).__name__:
+            pygame.time.delay(200) 
+        else:
+            pygame.time.delay(50)
             
-        elif self.game_mode == "AIvAI":
-            pygame.time.delay(100) 
-            ai_move = random.choice(valid_moves)
+        best_move = current_agent.get_move(self.gs)
+        
+        if best_move:
+            self.gs.apply_move(best_move)
             
-        if ai_move:
-            self.gs.apply_move(ai_move)
-            print(f"AI Moved: {ai_move}")
-            # Reset trạng thái animation/highlight
-            self.valid_moves = [] 
+            # Reset UI
+            self.valid_moves = []
             self.selected_square = ()
+            
+        # Kiểm tra hết cờ
+        if self.gs.is_checkmate(self.gs.turn) or self.gs.is_stalemate(self.gs.turn):
+            print("Game Over")
 
     # Vòng lặp chính
     def run(self):
         running = True
         while running:
-            # Kiểm tra xem có đến lượt AI không
-            is_ai_turn = False
+            # Kiểm tra có đến lượt AI không
             if self.game_state == "PLAYING":
-                if self.game_mode == "PvAI" and self.gs.turn == 'b':
-                    is_ai_turn = True
-                elif self.game_mode == "AIvAI":
-                    is_ai_turn = True
-
-            if is_ai_turn:
-                self.draw_gamestate() # Vẽ lại bàn cờ trước khi AI đi để thấy nước đi của người chơi
-                pygame.display.flip()
+                current_agent = self.agents[self.gs.turn]
+                if not current_agent.is_human():
+                    self.draw_gamestate()
+                    pygame.display.flip()
+                    self.execute_agent_move()
                 
-                pygame.time.delay(100)
-                
-                self.execute_ai_move() 
-                
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -397,27 +421,18 @@ class ChessMain:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         pos = pygame.mouse.get_pos()
                         if self.btn_pvp.is_clicked(pos):
-                            self.game_mode = "PvP"
-                            self.game_state = "PLAYING"
-                            self.gs = Board() # Reset board
-                        elif self.btn_minimax.is_clicked(pos):
-                            self.game_mode = "PvAI"
-                            self.game_state = "PLAYING"
-                            self.gs = Board()
-                        elif self.btn_ai_ai.is_clicked(pos):
-                            self.game_mode = "AIvAI"
-                            self.game_state = "PLAYING"
-                            self.gs = Board()
+                            self.setup_mode("PvP")
+                        elif self.btn_pv_minimax.is_clicked(pos):
+                            self.setup_mode("PvMinimax")
+                        elif self.btn_minimax_random.is_clicked(pos):
+                            self.setup_mode("MinimaxVsRandom")
+                        # elif self.btn_ml.is_clicked(pos): self.setup_mode("MLvsRandom")
             
                 elif self.game_state == "PLAYING":
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        can_click = True
-                        if self.game_mode == "PvAI" and self.gs.turn == 'b':
-                            can_click = False # Không click khi AI đang nghĩ
-                        if self.game_mode == "AIvAI":
-                            can_click = False 
+                        current_agent = self.agents[self.gs.turn]
 
-                        if can_click:
+                        if current_agent.is_human():
                             location = pygame.mouse.get_pos()
                             col = location[0] // SQ_SIZE
                             row = location[1] // SQ_SIZE
