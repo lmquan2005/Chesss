@@ -426,7 +426,8 @@ class ChessMain:
                             self.setup_mode("PvMinimax")
                         elif self.btn_minimax_random.is_clicked(pos):
                             self.setup_mode("MinimaxVsRandom")
-                        # elif self.btn_ml.is_clicked(pos): self.setup_mode("MLvsRandom")
+                        elif self.btn_ml_random.is_clicked(pos):
+                            self.setup_mode("MLvsRandom")
             
                 elif self.game_state == "PLAYING":
                     if event.type == pygame.MOUSEBUTTONDOWN:
