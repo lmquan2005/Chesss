@@ -324,6 +324,66 @@ class Board:
 
     def is_stalemate(self,color):
         return not self.is_in_check(color) and not self.legal_moves_exist(color)
+    
+    def fen(self):
+        # 1. Piece Placement (Rank 8 -> Rank 1)
+        fen_rows = []
+        for r in range(8):
+            empty_count = 0
+            row_str = ""
+            for c in range(8):
+                piece = self.board[r][c]
+                if piece == '.':
+                    empty_count += 1
+                else:
+                    if empty_count > 0:
+                        row_str += str(empty_count)
+                        empty_count = 0
+                    row_str += piece
+            if empty_count > 0:
+                row_str += str(empty_count)
+            fen_rows.append(row_str)
+        
+        piece_placement = "/".join(fen_rows)
+
+        # 2. Active Color
+        active_color = self.turn
+
+        # 3. Castling Rights (Strict order: K, Q, k, q)
+        castling = ""
+        if self.castling['w_k']: castling += "K"
+        if self.castling['w_q']: castling += "Q"
+        if self.castling['b_k']: castling += "k"
+        if self.castling['b_q']: castling += "q"
+        if not castling:
+            castling = "-"
+
+        # 4. En Passant Target Square
+        ep_target = "-"
+        if self.move_stack:
+            # move_stack stores tuples: (Move_object, previous_state)
+            last_move, _ = self.move_stack[-1]
+            r_from, c_from = last_move.from_sq
+            r_to, c_to = last_move.to_sq
+            
+            # Check for double pawn push
+            if last_move.piece.lower() == 'p' and abs(r_from - r_to) == 2:
+                # Target is the square skipped over
+                r_target = (r_from + r_to) // 2
+                c_target = c_to
+                
+                # Convert to algebraic (rank 0 -> '8', rank 7 -> '1')
+                file_char = chr(c_target + ord('a'))
+                rank_char = str(8 - r_target)
+                ep_target = file_char + rank_char
+
+        # 5. Halfmove Clock
+        halfmove = str(self.halfmove_clock)
+
+        # 6. Fullmove Number
+        fullmove = str(self.fullmove_number)
+
+        return f"{piece_placement} {active_color} {castling} {ep_target} {halfmove} {fullmove}"
 
 
 # Demo random play
