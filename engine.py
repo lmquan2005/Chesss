@@ -26,6 +26,57 @@ class Move:
         to = f"{chr(self.to_sq[1]+97)}{8-self.to_sq[0]}"
         promo = f"={self.promotion}" if self.promotion else ""
         return f"{self.piece}{fr}->{to}{promo}"
+    
+    @staticmethod
+    def from_uci(uci_str, board):
+        uci_str = uci_str.strip().lower()
+        
+        if len(uci_str) < 4 or len(uci_str) > 5:
+            raise ValueError(f"Invalid UCI string length: '{uci_str}'")
+        
+        from_file = uci_str[0]
+        from_rank = uci_str[1]
+        to_file = uci_str[2]
+        to_rank = uci_str[3]
+        
+        # Validate file characters (a-h)
+        if from_file not in 'abcdefgh' or to_file not in 'abcdefgh':
+            raise ValueError(f"Invalid file in UCI string: '{uci_str}'")
+        
+        # Validate rank characters (1-8)
+        if from_rank not in '12345678' or to_rank not in '12345678':
+            raise ValueError(f"Invalid rank in UCI string: '{uci_str}'")
+        
+        # Convert to internal coordinates (row, col)
+        # file 'a' -> col 0, rank '8' -> row 0
+        from_col = ord(from_file) - ord('a')
+        from_row = 8 - int(from_rank)
+        to_col = ord(to_file) - ord('a')
+        to_row = 8 - int(to_rank)
+        
+        from_sq = (from_row, from_col)
+        to_sq = (to_row, to_col)
+        
+        # Extract piece from the source square
+        piece = board.board[from_row][from_col]
+        
+        # Extract captured piece from the destination square (None if empty)
+        target = board.board[to_row][to_col]
+        captured = target if target != '.' else None
+        
+        # Handle promotion
+        promotion = None
+        if len(uci_str) == 5:
+            promo_char = uci_str[4]
+            if promo_char not in 'qrbn':
+                raise ValueError(f"Invalid promotion piece in UCI string: '{uci_str}'")
+            # Match promotion piece case to the moving piece's case
+            if piece.isupper():
+                promotion = promo_char.upper()
+            else:
+                promotion = promo_char.lower()
+        
+        return Move(from_sq, to_sq, piece=piece, captured=captured, promotion=promotion)
 
 class Board:
     def __init__(self):
