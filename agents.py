@@ -1,6 +1,8 @@
 import random
 import pygame
+import chessformer
 from minimax import Minimax
+from engine import Move, Board
 
 # Interface
 class Agent:
@@ -39,6 +41,5 @@ class MLAgent(Agent):
         pass
 
     def get_move(self, board):
-        print("ML Model predicting...")
-        # return self.model.predict(board)
-        return None
+        uci_str = chessformer.get_smart_move(board.fen())
+        return Move.from_uci(uci_str, board)
