@@ -237,17 +237,40 @@ class ChessMain:
                     if image_key in IMAGES:
                          self.screen.blit(IMAGES[image_key], pygame.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
-    # Chuyển đổi Object Move thành chuỗi hiển thị
+    # Chuyển đổi nước đi sang chuẩn quốc tế (Simplified SAN).
     def get_move_str(self, move_obj):
-        return str(move_obj)
-        # Option 2
-        r1, c1 = move_obj.from_sq
+        # Xử lý nhập thành
+        if hasattr(move_obj, 'is_castling') and move_obj.is_castling:
+            if move_obj.to_sq[1] > move_obj.from_sq[1]:
+                return "O-O"
+            else:
+                return "O-O-O"
+
+        # Xử lý quân cờ
+        piece_char = move_obj.piece.upper()
+        if piece_char == 'P':
+            piece_char = ""
+        
+        # Xử lý ăn quân
+        capture_char = ""
+        if move_obj.captured:
+            capture_char = "x"
+            if piece_char == "":
+                files = ['a','b','c','d','e','f','g','h']
+                piece_char = files[move_obj.from_sq[1]] 
+
+        # Xử lý tọa độ đích
         r2, c2 = move_obj.to_sq
         files = ['a','b','c','d','e','f','g','h']
         cols = ['8','7','6','5','4','3','2','1']
-        start = files[c1] + cols[r1]
-        end = files[c2] + cols[r2]
-        return f"{start}-{end}"
+        dest_sq = files[c2] + cols[r2] 
+
+        # Phong cấp
+        promo_char = ""
+        if move_obj.promotion:
+            promo_char = "=" + move_obj.promotion.upper()
+        # [TênQuân][x][Đích][=Q]
+        return f"{piece_char}{capture_char}{dest_sq}{promo_char}"
 
     def draw_move_log(self):
         log_x = HEIGHT + 25
@@ -259,11 +282,15 @@ class ChessMain:
 
         # move_stack chứa tuple (Move, prev_state). chỉ lấy Move.
         moves_list = [m[0] for m in self.gs.move_stack]
+        num_moves = len(moves_list)
 
         # Chỉ hiện 20 nước cuối
+        MOVES_TO_SHOW = 20
         start_index = 0
-        if len(moves_list) > 20:
-            start_index = len(moves_list) - 20
+        if num_moves > MOVES_TO_SHOW:
+            start_index = num_moves - MOVES_TO_SHOW
+            if start_index % 2 != 0:
+                start_index += 1
 
         for i in range(start_index, len(moves_list), 2):
             move_num = i // 2 + 1
