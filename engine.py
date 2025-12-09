@@ -238,6 +238,21 @@ class Board:
                             moves.append(Move((r,c),(rr,cc),p,captured=self.board[rr][cc],promotion=promo_piece))
                     else:
                         moves.append(Move((r,c),(rr,cc),p,captured=self.board[rr][cc]))
+
+            # EN PASSANT LOGIC
+            if self.move_stack:
+                last_move, _ = self.move_stack[-1]
+                r_last_from, c_last_from = last_move.from_sq
+                r_last_to, c_last_to = last_move.to_sq
+                # Quân vừa đi là tốt đối phương
+                if last_move.piece.lower() == 'p' and self.piece_color(last_move.piece) == opp:
+                    # Tốt đó đi 2 ô
+                    if abs(r_last_from - r_last_to) == 2:
+                        # Tốt đó đang nằm cạnh tốt mình
+                        if r_last_to == r and abs(c_last_to - c) == 1:
+                            r_dest = r + direction
+                            c_dest = c_last_to
+                            moves.append(Move((r,c), (r_dest, c_dest), p, captured=self.board[r][c_dest]))
         elif pl=='n':
             for dr,dc in DIRS_KNIGHT:
                 rr,cc = r+dr,c+dc
@@ -303,6 +318,12 @@ class Board:
         self.board[r2][c2] = m.promotion if m.promotion else self.board[r1][c1]
         self.board[r1][c1]='.'
 
+        # EN PASSANT LOGIC
+        if m.captured and prev_to == '.':
+            r_captured = r1 
+            c_captured = c2
+            self.board[r_captured][c_captured] = '.'
+
         # castling
         if m.is_castling:
             if m.piece=='K':
@@ -342,6 +363,12 @@ class Board:
         prev_from,prev_to,prev_castling,prev_half,prev_full=prev
         self.board[r1][c1]=prev_from
         self.board[r2][c2]=prev_to if prev_to!='.' else '.'
+
+        # EN PASSANT LOGIC
+        if m.captured and prev_to == '.':
+            r_captured = r1
+            c_captured = c2
+            self.board[r_captured][c_captured] = m.captured 
 
         # undo castling
         if m.is_castling:

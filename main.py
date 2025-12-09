@@ -42,7 +42,7 @@ class Theme:
     H_SELECTED  = (186, 202, 68)     # Vàng chanh 
     H_LAST_MOVE = (246, 246, 105)    # Vàng sáng
     H_CHECK     = (235, 90, 70)      # Đỏ cam
-    H_VALID_MOVE= (255, 255, 100)    # Vàng nhạt 
+    H_VALID_MOVE= (80, 200, 220)     # Xanh sáng
 
 # Class Button
 class Button:
