@@ -90,6 +90,20 @@ class Board:
 
     def clone(self):
         return copy.deepcopy(self)
+    
+    def get_board_signature(self):
+        # Tạo một chuỗi ký tự đại diện cho trạng thái hiện tại.
+        # Dùng để kiểm tra lặp lại 3 lần.
+        board_str = "".join(["".join(row) for row in self.board])
+        
+        castling_rights = ""
+        if self.castling['w_k']: castling_rights += "K"
+        if self.castling['w_q']: castling_rights += "Q"
+        if self.castling['b_k']: castling_rights += "k"
+        if self.castling['b_q']: castling_rights += "q"
+        
+        turn_char = self.turn
+        return f"{board_str}|{turn_char}|{castling_rights}"
 
     def init_board(self):
         setup = [
@@ -110,6 +124,9 @@ class Board:
         self.move_stack = []
         self.halfmove_clock = 0
         self.fullmove_number = 1
+
+        self.history = []
+        self.history.append(self.get_board_signature()) 
 
     def print_board(self):
         print("  +-----------------+")
@@ -316,6 +333,8 @@ class Board:
         self.turn = BLACK if self.turn==WHITE else WHITE
         if self.turn==WHITE: self.fullmove_number+=1
 
+        self.history.append(self.get_board_signature())
+
         return (prev_from,prev_to,prev_castling,prev_half,prev_full)
 
     def _unmake_move_on_board(self,m,prev):
@@ -337,6 +356,8 @@ class Board:
         self.halfmove_clock=prev_half
         self.fullmove_number=prev_full
         self.turn = BLACK if self.turn==WHITE else WHITE
+
+        self.history.pop() 
 
     def get_valid_moves(self):
         pseudo = self.generate_pseudo_legal_moves()
@@ -435,6 +456,45 @@ class Board:
         fullmove = str(self.fullmove_number)
 
         return f"{piece_placement} {active_color} {castling} {ep_target} {halfmove} {fullmove}"
+
+    # Các luật hòa cờ
+    # 100 nửa nước không ăn quân/đi tốt
+    def is_fifty_moves(self):
+        return self.halfmove_clock >= 100
+
+    # Lặp lại 3 lần
+    def is_threefold_repetition(self):
+        current_sig = self.history[-1]
+        return self.history.count(current_sig) >= 3
+
+    # Không đủ material
+    def is_insufficient_material(self):
+        pieces = []
+        for r in range(8):
+            for c in range(8):
+                p = self.board[r][c]
+                if p != '.':
+                    pieces.append(p)
+        # Vua vs Vua
+        if len(pieces) == 2: 
+            return True
+        # Vua + Mã/Tượng vs Vua
+        if len(pieces) == 3:
+            for p in pieces:
+                if p.upper() in ['N', 'B']:
+                    return True
+        return False
+
+    def is_draw(self):
+        if self.is_stalemate(self.turn):
+            return True, "Stalemate"
+        if self.is_fifty_moves():
+            return True, "50-Move Rule"
+        if self.is_threefold_repetition():
+            return True, "3-Fold Repetition"
+        if self.is_insufficient_material():
+            return True, "Insufficient Material"
+        return False, ""
 
 
 # Demo random play

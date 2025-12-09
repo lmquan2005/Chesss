@@ -552,9 +552,11 @@ class ChessMain:
                 game_over = True
                 winner = "Black" if self.gs.turn == 'w' else "White"
                 winner_text = f"{winner} Wins by Checkmate!"
-            elif self.gs.is_stalemate(self.gs.turn):
-                game_over = True
-                winner_text = "Draw by Stalemate!"
+            else:
+                is_draw, reason = self.gs.is_draw()
+                if is_draw:
+                    game_over = True
+                    winner_text = f"Draw by {reason}!"
             
             if game_over:
                 # Vẽ thông báo giữa màn hình
