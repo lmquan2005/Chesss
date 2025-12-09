@@ -42,7 +42,7 @@ class Theme:
     H_SELECTED  = (186, 202, 68)     # Vàng chanh 
     H_LAST_MOVE = (246, 246, 105)    # Vàng sáng
     H_CHECK     = (235, 90, 70)      # Đỏ cam
-    H_VALID_MOVE= (255, 255, 100)    # Vàng nhạt 
+    H_VALID_MOVE= (80, 200, 220)     # Xanh sáng
 
 # Class Button
 class Button:
@@ -552,9 +552,11 @@ class ChessMain:
                 game_over = True
                 winner = "Black" if self.gs.turn == 'w' else "White"
                 winner_text = f"{winner} Wins by Checkmate!"
-            elif self.gs.is_stalemate(self.gs.turn):
-                game_over = True
-                winner_text = "Draw by Stalemate!"
+            else:
+                is_draw, reason = self.gs.is_draw()
+                if is_draw:
+                    game_over = True
+                    winner_text = f"Draw by {reason}!"
             
             if game_over:
                 # Vẽ thông báo giữa màn hình

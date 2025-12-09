@@ -66,6 +66,12 @@ class Minimax(object):
         return bestMove
 
     def minimax(self, depth, isMaximizer, alpha, beta):
+        # Thêm: Kiểm tra hòa cờ -> Tránh nếu đang thắng, ưu tiên nếu đang thua
+        # => Chạy chậm hơn nhưng tỉ lệ thắng cao hơn
+        is_draw, reason = self.board.is_draw()
+        if is_draw:
+            return 0
+
         if depth == 0:
             return self.Evaluate()
 
