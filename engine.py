@@ -1,4 +1,3 @@
-# chess_engine_full.py
 import copy
 
 WHITE = 'w'
