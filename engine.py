@@ -58,6 +58,13 @@ class Move:
         
         # Extract piece from the source square
         piece = board.board[from_row][from_col]
+
+        # Check for castling
+        is_castling = False
+        if piece.upper() == 'K':
+            # Check for 2-square horizontal move
+            if abs(from_col - to_col) == 2:
+                is_castling = True
         
         # Extract captured piece from the destination square (None if empty)
         target = board.board[to_row][to_col]
@@ -75,7 +82,7 @@ class Move:
             else:
                 promotion = promo_char.lower()
         
-        return Move(from_sq, to_sq, piece=piece, captured=captured, promotion=promotion)
+        return Move(from_sq, to_sq, piece=piece, captured=captured, promotion=promotion, is_castling=is_castling)
 
 class Board:
     def __init__(self):
